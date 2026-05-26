@@ -5,22 +5,36 @@
     <title>MANERA SNS - Трекер</title>
     <style>
         body { background: #0a0c0f; color: #fff; font-family: sans-serif; margin: 0; }
-        .nav { display: flex; justify-content: space-around; padding: 15px; border-bottom: 1px solid #333; }
+        .nav { display: flex; justify-content: space-around; padding: 15px; border-bottom: 1px solid #333; background: #111; }
         .tab { cursor: pointer; padding: 10px; color: #888; }
         .tab.active { color: #00f0ff; border-bottom: 2px solid #00f0ff; }
         .content { padding: 20px; display: none; }
         .content.active { display: block; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #333; padding: 10px; text-align: left; }
     </style>
 </head>
 <body>
     <div class="nav">
-        <div class="tab active" onclick="show('stats')">Статистика</div>
-        <div class="tab" onclick="show('scout')">Скаут</div>
-        <div class="tab" onclick="show('chat')">Чат</div>
+        <div class="tab active" onclick="show('stats', this)">Статистика</div>
+        <div class="tab" onclick="show('scout', this)">Скаут</div>
+        <div class="tab" onclick="show('chat', this)">Чат</div>
     </div>
-    <div id="stats" class="content active"><h2>Статистика</h2><p>База подключена.</p></div>
-    <div id="scout" class="content"><h2>Скаутинг</h2></div>
-    <div id="chat" class="content"><h2>Чат</h2><div id="msg"></div></div>
+
+    <div id="stats" class="content active">
+        <h2>Статистика боев</h2>
+        <table>
+            <tr><th>Боец</th><th>Результат</th></tr>
+            <tr><td>Massi</td><td>Победа</td></tr>
+        </table>
+    </div>
+
+    <div id="scout" class="content"><h2>Скаутинг</h2><p>Данные по игрокам появятся здесь.</p></div>
+
+    <div id="chat" class="content">
+        <h2>Общий чат</h2>
+        <div id="msgContainer" style="height: 200px; overflow-y: scroll; border: 1px solid #333; padding: 5px;"></div>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
@@ -33,9 +47,12 @@
             appId: "1:722470175371:web:1131f004200e93c75c4a"
         };
         initializeApp(firebaseConfig);
-        window.show = function(id) {
+        
+        window.show = function(id, el) {
             document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.getElementById(id).classList.add('active');
+            el.classList.add('active');
         };
     </script>
 </body>
