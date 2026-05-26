@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MANERA SNS - Трекер</title>
+    <style>
+        body { background: #0a0c0f; color: #fff; font-family: sans-serif; margin: 0; }
+        .nav { display: flex; justify-content: space-around; padding: 15px; border-bottom: 1px solid #333; background: #111; }
+        .tab { cursor: pointer; padding: 10px; color: #888; }
+        .tab.active { color: #00f0ff; border-bottom: 2px solid #00f0ff; }
+        .content { padding: 20px; display: none; }
+        .content.active { display: block; }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <div class="tab active" onclick="switchTab('stats', this)">Статистика</div>
+        <div class="tab" onclick="switchTab('scout', this)">Скаут</div>
+        <div class="tab" onclick="switchTab('chat', this)">Чат</div>
+    </div>
+
+    <div id="stats" class="content active"><h2>Статистика</h2><p>Данные загружаются...</p></div>
+    <div id="scout" class="content"><h2>Скаутинг</h2><p>Данные скаута...</p></div>
+    <div id="chat" class="content"><h2>Общий чат</h2><div id="msg"></div><input id="in" placeholder="Текст..."><button onclick="send()">Отправить</button></div>
+
+    <script>
+        function switchTab(id, el) {
+            document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            el.classList.add('active');
+        }
+    </script>
+</body>
+</html>
