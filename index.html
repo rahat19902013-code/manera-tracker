@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MANERA – Трекер Заруб</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0c0f;
+            --bg2: #111418;
+            --bg3: #181c22;
+            --card: #1a1f27;
+            --border: rgba(255, 255, 255, 0.07);
+            --border2: rgba(255, 255, 255, 0.12);
+            --green: #00e67a;
+            --green2: #00b85f;
+            --green-dim: rgba(0, 230, 122, 0.12);
+            --red: #ff4757;
+            --red-dim: rgba(255, 71, 87, 0.12);
+            --amber: #ffb300;
+            --amber-dim: rgba(255, 179, 0, 0.12);
+            --cyan: #00f0ff;
+            --text-main: #f5f5f7;
+            --text-muted: #8e8e93;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg); color: var(--text-main); padding-bottom: 40px; }
+
+        /* Окно авторизации */
+        #auth-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 12, 15, 0.98); z-index: 9999;
+            display: flex; justify-content: center; align-items: center; padding: 20px;
+        }
+        .auth-card {
+            background: var(--bg2); border: 1px solid var(--border2);
+            border-radius: 16px; padding: 30px; width: 100%; max-width: 400px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center;
+        }
+        .auth-card h2 { color: #fff; margin-bottom: 8px; font-size: 22px; font-weight: 800; }
+        .auth-card p { color: var(--text-muted); margin-bottom: 20px; font-size: 14px; }
+        .auth-input {
+            width: 100%; background: var(--bg3); border: 1px solid var(--border);
+            color: #fff; padding: 12px; border-radius: 8px; margin-bottom: 12px;
+            font-size: 15px; outline: none; text-align: center; transition: 0.3s;
+        }
+        .auth-input:focus { border-color: var(--cyan); }
+        .auth-btn {
+            width: 100%; background: var(--cyan); color: #000; border: none;
+            padding: 12px; border-radius: 8px; font-weight: 700;
+            font-size: 15px; cursor: pointer; transition: 0.3s;
+        }
+        .auth-btn:hover { opacity: 0.9; }
+
+        /* Шапка проекта */
+        header { background: var(--bg2); padding: 20px; text-align: center; border-bottom: 1px solid var(--border); }
+        header h1 { font-size: 26px; font-weight: 800; letter-spacing: 1px; color: #fff; }
+        .user-badge { font-size: 12px; color: var(--cyan); margin-top: 6px; font-weight: 600; }
+
+        /* Вкладки навигации */
+        .nav-tabs { display: flex; background: var(--bg2); border-bottom: 1px solid var(--border); overflow-x: auto; }
+        .tab-btn { flex: 1; min-width: 100px; text-align: center; padding: 16px 10px; background: none; border: none; color: var(--text-muted); font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: 0.2s; }
+        .tab-btn.active { color: var(--cyan); border-bottom: 2px solid var(--cyan); background: rgba(0, 240, 255, 0.02); }
+
+        /* Контентная зона */
+        .container { max-width: 600px; margin: 20px auto; padding: 0 16px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Реализация ЧАТА */
+        .chat-container { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; height: 55vh; display: flex; flex-direction: column; overflow: hidden; }
+        .chat-messages { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .msg { background: var(--bg3); padding: 10px 14px; border-radius: 12px; max-width: 85%; align-self: flex-start; border-left: 3px solid var(--cyan); }
+        .msg.my-msg { align-self: flex-end; border-left: none; border-right: 3px solid var(--green); background: var(--card); }
+        .msg-meta { display: flex; gap: 8px; font-size: 11px; margin-bottom: 4px; font-weight: 700; }
+        .msg-sender { color: var(--cyan); }
+        .msg.my-msg .msg-sender { color: var(--green); }
+        .msg-guild { color: var(--text-muted); }
+        .msg-text { font-size: 14px; color: #fff; word-break: break-word; line-height: 1.4; }
+        .msg-time { font-size: 9px; color: var(--text-muted); text-align: right; margin-top: 4px; }
+        .chat-input-area { padding: 12px; background: var(--bg3); border-top: 1px solid var(--border); display: flex; gap: 10px; }
+        .chat-input { flex: 1; background: var(--bg); border: 1px solid var(--border); color: #fff; padding: 12px; border-radius: 8px; font-size: 14px; outline: none; }
+        .chat-send-btn { background: var(--cyan); color: #000; border: none; padding: 0 18px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+        .del-btn { color: var(--red); background: none; border: none; font-size: 11px; margin-left: 8px; cursor: pointer; display: none; }
+
+        /* Стилизация карточек Боев и Новостей */
+        .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 12px; }
+        .match-card { display: flex; justify-content: space-between; align-items: center; }
+        .match-card.win { border-left: 4px solid var(--green); background: linear-gradient(90deg, var(--green-dim), transparent); }
+        .match-card.lose { border-left: 4px solid var(--red); background: linear-gradient(90deg, var(--red-dim), transparent); }
+        .match-info h4 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+        .match-info p { font-size: 12px; color: var(--text-muted); }
+        .match-score { font-size: 20px; font-weight: 800; letter-spacing: 1px; }
+        
+        .news-card { border-left: 4px solid var(--amber); background: linear-gradient(90deg, var(--amber-dim), transparent); }
+        .news-card h4 { color: #fff; font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+        .news-card p { font-size: 14px; color: var(--text-main); line-height: 1.5; }
+        .news-time { font-size: 11px; color: var(--text-muted); margin-top: 8px; }
+
+        /* Панель управления (Админка) */
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-input { width: 100%; background: var(--bg3); border: 1px solid var(--border); color: #fff; padding: 12px; border-radius: 8px; outline: none; font-size: 14px; }
+        .form-row { display: flex; gap: 10px; }
+        .radio-group { display: flex; gap: 20px; margin: 8px 0; }
+        .radio-group label { font-size: 14px; font-weight: 600; cursor: pointer; }
+        .admin-btn { background: var(--cyan); color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 6px; }
+
+        /* Таблица гостей */
+        table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { color: var(--text-muted); font-size: 11px; font-weight: 700; text-transform: uppercase; }
+
+        footer { text-align: center; padding: 24px; color: var(--text-muted); font-size: 11px; }
+        .admin-lock { cursor: pointer; margin-left: 6px; color: var(--bg3); }
+    </style>
+</head>
+<body>
+
+    <div id="auth-overlay">
+        <div class="auth-card">
+            <h2>Вход в Трекер</h2>
+            <p>Зарегистрируйте свой профиль для доступа к сети</p>
+            <input type="text" id="reg-nick" class="auth-input" placeholder="Ваш игровой ник" maxlength="15">
+            <input type="text" id="reg-guild" class="auth-input" placeholder="Ваша Гильдия (например: MANERA)" maxlength="15">
+            <input type="text" id="reg-status" class="auth-input" placeholder="Ваш статус / девиз" maxlength="40">
+            <button class="auth-btn" onclick="registerUser()">Войти в сеть</button>
+        </div>
+    </div>
+
+    <header>
+        <h1>MANERA SNS</h1>
+        <div class="user-badge" id="current-user-display">Синхронизация профиля...</div>
+    </header>
+
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('chat')">💬 ЧАТ СЕТИ</button>
+        <button class="tab-btn" onclick="switchTab('matches')">⚔️ ЗАРУБЫ</button>
+        <button class="tab-btn" onclick="switchTab('news')">📰 ЛЕНТА</button>
+        <button class="tab-btn id-admin-only" id="users-tab" style="display:none;" onclick="switchTab('users')">👥 БОЙЦЫ</button>
+        <button class="tab-btn id-admin-only" id="control-tab" style="display:none;" onclick="switchTab('control')">⚙️ УПРАВЛЕНИЕ</button>
+    </div>
+
+    <div class="container">
+        <div id="tab-chat" class="tab-content active">
+            <div class="chat-container">
+                <div class="chat-messages" id="chat-box"></div>
+                <div class="chat-input-area">
+                    <input type="text" id="chat-msg-input" class="chat-input" placeholder="Написать сообщение..." maxlength="150">
+                    <button class="chat-send-btn" onclick="sendMessage()">ОТПРАВИТЬ</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-matches" class="tab-content">
+            <div id="matches-list"><h3>Загрузка списка заруб...</h3></div>
+        </div>
+
+        <div id="tab-news" class="tab-content">
+            <div id="news-list"><h3>Загрузка обновлений...</h3></div>
+        </div>
+
+        <div id="tab-users" class="tab-content">
+            <div class="card">
+                <h3 style="margin-bottom:10px; color:var(--cyan)">Зарегистрированные в системе</h3>
+                <table>
+                    <thead><tr><th>Никнейм</th><th>Гильдия</th><th>Статус</th></tr></thead>
+                    <tbody id="admin-users-table"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tab-control" class="tab-content">
+            <div class="card">
+                <h3 style="margin-bottom:12px; color:var(--green)">Внести новую зарубу</h3>
+                <div class="form-group">
+                    <label>Результат матча</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="m-res" value="win" checked> 👍 ПОБЕДА</label>
+                        <label><input type="radio" name="m-res" value="lose"> 👎 ПОРАЖЕНИЕ</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Вражеский клан / гильдия</label>
+                    <input type="text" id="m-enemy" class="form-input" placeholder="Например: ALFA">
+                </div>
+                <div class="form-row">
+                    <div class="form-group" style="flex:1;">
+                        <label>Наш счёт</label>
+                        <input type="number" id="m-score-us" class="form-input" placeholder="0">
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label>Их счёт</label>
+                        <input type="number" id="m-score-them" class="form-input" placeholder="0">
+                    </div>
+                </div>
+                <button class="admin-btn" onclick="addMatchToDb()">Опубликовать Зарубу</button>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom:12px; color:var(--amber)">Добавить новость в ленту</h3>
+                <div class="form-group">
+                    <label>Заголовок объявления</label>
+                    <input type="text" id="n-title" class="form-input" placeholder="Внимание, сбор!">
+                </div>
+                <div class="form-group">
+                    <label>Содержание новости</label>
+                    <textarea id="n-text" class="form-input" rows="3" placeholder="Текст новости..."></textarea>
+                </div>
+                <button class="admin-btn" onclick="addNewsToDb()">Вывесить в ленту</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2026 MANERA SNS. Стримы Масси фф. <span class="admin-lock" onclick="tryAdminAuth()">🔒</span></p>
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, push, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // ТВОИ КЛЮЧИ С ФОТОГРАФИИ ДЛЯ ПРОЕКТА manera-sns
+        const firebaseConfig = {
+            apiKey: "AIzaSyCyNi8TRsgZykBYVkzIL3N6...",
+            authDomain: "manera-sns.firebaseapp.com",
+            projectId: "manera-sns",
+            storageBucket: "manera-sns.firebasestorage.app",
+            messagingSenderId: "722470175371",
+            appId: "1:722470175371:web:1131f004261d76ea2ed682",
+            measurementId: "G-VBM8Q21TQQ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let currentUser = null;
+        let isAdmin = false;
+
+        // Авто-вход при открытии страницы с телефона
+        window.onload = function() {
+            const savedUser = localStorage.getItem('manera_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                document.getElementById('auth-overlay').style.display = 'none';
+                document.getElementById('current-user-display').innerText = `Боец: ${currentUser.nick} [${currentUser.guild}] | "${currentUser.status}"`;
+                initDataSync();
+            }
+        };
+
+        // Запись нового гостя
+        window.registerUser = function() {
+            const nick = document.getElementById('reg-nick').value.trim();
+            const guild = document.getElementById('reg-guild').value.trim();
+            const status = document.getElementById('reg-status').value.trim();
+
+            if(!nick || !guild) {
+                alert('Никнейм и гильдия обязательны для авторизации!');
+                return;
+            }
+
+            currentUser = { nick, guild, status: status || "Без статуса" };
+            localStorage.setItem('manera_user', JSON.stringify(currentUser));
+            
+            set(ref(db, 'users/' + nick.replace(/[.#$/\[\]]/g, "_")), currentUser);
+            document.getElementById('auth-overlay').style.display = 'none';
+            document.getElementById('current-user-display').innerText = `Боец: ${currentUser.nick} [${currentUser.guild}] | "${currentUser.status}"`;
+            
+            initDataSync();
+        };
+
+        // Работа с сообщениями в чате
+        window.sendMessage = function() {
+            const input = document.getElementById('chat-msg-input');
+            const text = input.value.trim();
+            if(!text || !currentUser) return;
+
+            push(ref(db, 'chat'), {
+                sender: currentUser.nick,
+                guild: currentUser.guild,
+                text: text,
+                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+            });
+            input.value = '';
+        };
+
+        // Публикация Боев в Firebase
+        window.addMatchToDb = function() {
+            const result = document.querySelector('input[name="m-res"]:checked').value;
+            const enemy = document.getElementById('m-enemy').value.trim();
+            const scoreUs = document.getElementById('m-score-us').value;
+            const scoreThem = document.getElementById('m-score-them').value;
+
+            if(!enemy || scoreUs === "" || scoreThem === "") { alert("Пожалуйста, заполните данные о бое!"); return; }
+
+            push(ref(db, 'matches'), { result, enemy, score: `${scoreUs}:${scoreThem}`, date: new Date().toLocaleDateString() });
+            alert("Заруба зафиксирована в базе!");
+            document.getElementById('m-enemy').value = '';
+            document.getElementById('m-score-us').value = '';
+            document.getElementById('m-score-them').value = '';
+        };
+
+        // Публикация Новостей в Firebase
+        window.addNewsToDb = function() {
+            const title = document.getElementById('n-title').value.trim();
+            const text = document.getElementById('n-text').value.trim();
+
+            if(!title || !text) { alert("Заполните заголовок и текст!"); return; }
+
+            push(ref(db, 'news'), { title, text, date: new Date().toLocaleDateString() });
+            alert("Новость успешно опубликована!");
+            document.getElementById('n-title').value = '';
+            document.getElementById('n-text').value = '';
+        };
+
+        // Общая синхронизация облака с экраном пользователя
+        function initDataSync() {
+            // Чат онлайн
+            onValue(ref(db, 'chat'), (snapshot) => {
+                const box = document.getElementById('chat-box');
+                box.innerHTML = '';
+                const data = snapshot.val();
+                if(data) {
+                    Object.keys(data).forEach(key => {
+                        const m = data[key];
+                        const isMe = m.sender === currentUser.nick;
+                        const div = document.createElement('div');
+                        div.className = `msg ${isMe ? 'my-msg' : ''}`;
+                        div.innerHTML = `
+                            <div class="msg-meta"><span class="msg-sender">${m.sender}</span> <span class="msg-guild">[${m.guild}]</span></div>
+                            <div class="msg-text">${m.text}</div>
+                            <div class="msg-time">${m.time} <span class="del-btn" style="display:${isAdmin?'inline':'none'}" onclick="deleteItem('chat/${key}')">✕</span></div>
+                        `;
+                        box.appendChild(div);
+                    });
+                    box.scrollTop = box.scrollHeight;
+                }
+            });
+
+            // Список заруб
+            onValue(ref(db, 'matches'), (snapshot) => {
+                const list = document.getElementById('matches-list');
+                list.innerHTML = '';
+                const data = snapshot.val();
+                if(!data) { list.innerHTML = '<h3 style="text-align:center;color:var(--text-muted);margin-top:20px;">Заруб пока нет</h3>'; return; }
+                Object.keys(data).reverse().forEach(key => {
+                    const m = data[key];
+                    list.innerHTML += `
+                        <div class="card match-card ${m.result}">
+                            <div class="match-info">
+                                <h4>Против: ${m.enemy}</h4>
+                                <p>${m.date} <span class="del-btn" style="display:${isAdmin?'inline':'none'}" onclick="deleteItem('matches/${key}')">✕ Удалить</span></p>
+                            </div>
+                            <div class="match-score">${m.score}</div>
+                        </div>`;
+                });
+            });
+
+            // Лента новостей
+            onValue(ref(db, 'news'), (snapshot) => {
+                const list = document.getElementById('news-list');
+                list.innerHTML = '';
+                const data = snapshot.val();
+                if(!data) { list.innerHTML = '<h3 style="text-align:center;color:var(--text-muted);margin-top:20px;">Лента пуста</h3>'; return; }
+                Object.keys(data).reverse().forEach(key => {
+                    const n = data[key];
+                    list.innerHTML += `
+                        <div class="card news-card">
+                            <h4>${n.title}</h4>
+                            <p>${n.text}</p>
+                            <div class="news-time">${n.date} <span class="del-btn" style="display:${isAdmin?'inline':'none'}" onclick="deleteItem('news/${key}')">✕ Удалить из ленты</span></div>
+                        </div>`;
+                });
+            });
+
+            // База авторизованных игроков (только для админа)
+            onValue(ref(db, 'users'), (snapshot) => {
+                const tbody = document.getElementById('admin-users-table');
+                tbody.innerHTML = '';
+                const data = snapshot.val();
+                if(data) {
+                    Object.values(data).forEach(u => {
+                        tbody.innerHTML += `<tr><td><b>${u.nick}</b></td><td>${u.guild}</td><td><i>${u.status}</i></td></tr>`;
+                    });
+                }
+            });
+        }
+
+        // Вход в панель создателя сайта
+        window.tryAdminAuth = function() {
+            const pass = prompt("Введите секретный код управления:");
+            if(pass === "масси" || pass === "1234") {
+                isAdmin = true;
+                alert("Доступ администратора подтвержден!");
+                document.querySelectorAll('.id-admin-only').forEach(el => el.style.display = 'block');
+                document.querySelectorAll('.del-btn').forEach(el => el.style.display = 'inline');
+            } else { alert("Неверный код доступа!"); }
+        };
+
+        // Кнопка удаления для админа
+        window.deleteItem = function(path) {
+            if(confirm("Вы уверены, что хотите удалить эту запись?")) { remove(ref(db, path)); }
+        };
+    </script>
+
+    <script>
+        // Переключение меню сайта
+        function switchTab(name) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + name).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+    </script>
+</body>
+</html>
